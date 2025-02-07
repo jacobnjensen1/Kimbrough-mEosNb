@@ -289,6 +289,37 @@ def plotBDFPAcceptorContours_test(dataToPlot, labelColumn="manualLabel", colors=
     if returnFig:
         return fig
 
+def plotBDFPAcceptorContours_lines(dataToPlot, labelColumn="manualLabel", colors=plt.get_cmap("tab10").colors, ax=None, xlims=None, ylims=None, returnFig=False, hueOrder=None, linewidths=np.linspace(0.1,2,9), title=None):
+    if not ax:    
+        fig = plt.figure()
+        ax = plt.gca()
+
+    if "BDFP/SSC" not in dataToPlot:
+        dataToPlot["BDFP/SSC"] = dataToPlot["BDFP1.6-A"] / dataToPlot["SSC 488/10-A"]
+
+    colorsToUse = {str(label): colors[label] for label in dataToPlot[labelColumn].unique()}
+    if hueOrder is not None:
+        filteredHueOrder = [label for label in hueOrder if label in dataToPlot[labelColumn].unique()]
+        stringHueOrder = [str(label) for label in filteredHueOrder]
+    else:
+        stringHueOrder = None
+
+    #palette can take a dictionary, so this should work
+    # sns.kdeplot(dataToPlot, x="Acceptor/SSC", y="BDFP/SSC", hue=labelColumn, palette=colorsToUse, fill=True, alpha=0.5, legend=False, log_scale=True, ax=ax, clip=(xlims, ylims))
+    sns.kdeplot(dataToPlot, x="Acceptor/SSC", y="BDFP/SSC", hue=dataToPlot[labelColumn].astype(str), palette=colorsToUse, fill=False, linewidths=linewidths, legend=False, log_scale=True, ax=ax, clip=(xlims, ylims), hue_order=stringHueOrder)
+
+    defaultXLabel = "mEos3 concentration (p.d.u.)"
+    defaultYLabel = "BDFP1.6:1.6 concentration (p.d.u.)"
+
+    ax.set_xlabel(defaultXLabel)
+    ax.set_ylabel(defaultYLabel)
+
+    if title is not None:
+        ax.set_title(title)
+    
+    if returnFig:
+        return fig
+
 #Don't use this
 # def readDataToDF(filename, minAmFRET=-0.2, maxAmFRET=1.0, minAmFRETPercentile=0.01, maxAmFRETPercentile = 99.99, minAcceptorPercentile=0.1, maxAcceptorPercentile=100, minLDAPercentile=0, maxLDAPercentile=100, xAxis ="log(Acceptor)"):
 #     """
@@ -613,12 +644,13 @@ def populationRowWithDensityContourFromData(titledDataList, axs, labelColumn, ro
 
 # def plotBDFPAcceptorContours_test(dataToPlot, labelColumn="manualLabel", colors=plt.get_cmap("tab10").colors, ax=None, xlims=None, ylims=None, returnFig=False, hueOrder=None, alpha=np.linspace(0.2,0.6,9)):
 
-def BDFPAcceptorRowFromData(titledDataList, axs, labelColumn="manualLabel", addTitles=True, rowTitle=None, rowTitleXShift=0, rowTitleSize=12, colors=[[120/255, 120/255, 120/255], [249/255, 29/255, 0/255], [32/255, 25/255, 250/255]], hueOrder=None, alpha=np.linspace(0.2,0.6,9), xlims=None, ylims=None, firstColLabelsOnly=False, emptyFirstCol=False):
+def BDFPAcceptorRowFromData(titledDataList, axs, labelColumn="manualLabel", addTitles=True, rowTitle=None, rowTitleXShift=0, rowTitleSize=12, colors=[[120/255, 120/255, 120/255], [249/255, 29/255, 0/255], [32/255, 25/255, 250/255]], hueOrder=None, alpha=np.linspace(0.2,0.6,9), linewidths=np.linspace(0.1, 2, 9), xlims=None, ylims=None, firstColLabelsOnly=False, emptyFirstCol=False):
     """
     Makes a row of plots using plotBDFPAcceptorContours_test, most keywords are passed through.
     Use xlims and ylims carefully, they apply to all plots in the row regardless of BDFP+/bdfp-. 
     The defaults *should* be reasonable (for data in this run).
     Case insensitive titles of "control" or "x3912b" are assumed to be bdfp-
+    alpha and linewidths are intended to be mutually exclusive
     """
     
     expressionLims_kde = (0.25, 3)
@@ -664,11 +696,19 @@ def BDFPAcceptorRowFromData(titledDataList, axs, labelColumn="manualLabel", addT
             plotXlims_kde = expressionLims_kde
         else:
             plotXlims_kde = xlims
-        
-        if addTitles:
-            plotBDFPAcceptorContours_test(data, ax=axs[i], labelColumn=labelColumn, colors=colors, xlims=plotXlims_kde, ylims=plotYlims_kde, hueOrder=hueOrder, alpha=alpha, title=title)
-        else:
-            plotBDFPAcceptorContours_test(data, ax=axs[i], labelColumn=labelColumn, colors=colors, xlims=plotXlims_kde, ylims=plotYlims_kde, hueOrder=hueOrder, alpha=alpha)
+
+        if linewidths is not None:
+            if addTitles:
+                plotBDFPAcceptorContours_lines(data, ax=axs[i], labelColumn=labelColumn, colors=colors, xlims=plotXlims_kde, ylims=plotYlims_kde, hueOrder=hueOrder, linewidths=linewidths, title=title)
+            else:
+                plotBDFPAcceptorContours_test(data, ax=axs[i], labelColumn=labelColumn, colors=colors, xlims=plotXlims_kde, ylims=plotYlims_kde, hueOrder=hueOrder, linewidths=linewidths)
+
+            
+        else: # use filled version by default
+            if addTitles:
+                plotBDFPAcceptorContours_test(data, ax=axs[i], labelColumn=labelColumn, colors=colors, xlims=plotXlims_kde, ylims=plotYlims_kde, hueOrder=hueOrder, alpha=alpha, title=title)
+            else:
+                plotBDFPAcceptorContours_test(data, ax=axs[i], labelColumn=labelColumn, colors=colors, xlims=plotXlims_kde, ylims=plotYlims_kde, hueOrder=hueOrder, alpha=alpha)
             
         #kdeplot automatically sets the limits to fit the data, not based on what was clipped
         plotXlims = (10**plotXlims_kde[0], 10**plotXlims_kde[1])
