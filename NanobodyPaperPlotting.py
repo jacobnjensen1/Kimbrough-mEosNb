@@ -11,7 +11,6 @@ from matplotlib.path import Path
 
 #This is largely copied from /home/jj2765/DAmFRET_denoising/tomato/DAmFRETClusteringTools/ClusterPlotting.py, but with modifications desired by Hannah.
 
-
 #add arial
 from matplotlib import font_manager
 arialPath = "/n/projects/jj2765/mEos_nanobody/fonts/arial.ttf"
@@ -22,7 +21,7 @@ font_manager.fontManager.addfont(arialPath)
 plt.rcParams["font.family"] = "Arial"
 plt.rcParams["font.size"] = 10
 
-def plotDAmFRETCluster(x, y, color="blue", ax=None, title=None, vmin=0.25, xlab="mEos3 concentration (p.d.u.)", ylab="AmFRET"):
+def plotDAmFRETCluster(x, y, color="blue", ax=None, title=None, vmin=0.25, xlab="mEos3 conc. (p.d.u.)", ylab="AmFRET", mpl_dpi=100):
     """
     Inspired by Tayla's function and the "double" example from the mpl_scatter_density README
     If ax is not given, the only plot will be the cluster plot
@@ -35,21 +34,22 @@ def plotDAmFRETCluster(x, y, color="blue", ax=None, title=None, vmin=0.25, xlab=
     #     ax.scatter_density(x, y, color=color, norm=colors.LogNorm()) #blocky
     #setting dpi in scatter_density the same as figure dpi leads to swirls and other fun problems.
     if len(x) >= 2: #only one cell breaks things because vmin = vmax
-        ax.scatter_density(x, y, color=color, norm=colors.LogNorm(), vmin=vmin, vmax=np.nanmax, dpi=100, clip_on=True) #I think this looks good, clip_on added on 6/13 to better address saturated acceptor values
+        ax.scatter_density(x, y, color=color, norm=colors.LogNorm(), vmin=vmin, vmax=np.nanmax, dpi=mpl_dpi, clip_on=True) #I think this looks good, clip_on added on 6/13 to better address saturated acceptor values
     #update: clip_on doesn't actually help.
     #increasing zorder allows the plot to lay over the spines, but that shouldn't be necessary, the spines should be outside of the data.
     #Because they aren't actually outside of the data, I set the right spine to be 0.5 further out. That seems to be the width of a point in scatter_density, but I'm not sure if it's flexible across dpis and figsizes.
     #ax.scatter_density(x, y, color=color, norm=colors.LogNorm(), vmin=vmin, vmax=np.nanmax, dpi=100, zorder=5)
     #ax.scatter_density(x, y, color=color, norm=colors.LogNorm(), vmin=vmin, vmax=np.nanmax, dpi=None, zorder=5)
 
-    ax.spines.right.set_position(("outward", 0.5))
+    #not moving spines in this version because overlaps aren't present
+    # ax.spines.right.set_position(("outward", 0.5))
     ax.set_xlabel(xlab, loc="center")
     ax.set_ylabel(ylab, loc="center")
     if title:
         ax.set_title(title)
     return ax
 
-def plotDAmFRETDensity(x, y, ax=None, vmin=0.25, figWidth=4.5, figHeight=3, title=None, xlab="mEos3 concentration (p.d.u.)", ylab="AmFRET", returnFig=False, xlims=None, ylims=None, logX=False, mpl_dpi=100, cmap=None):
+def plotDAmFRETDensity(x, y, ax=None, vmin=0.25, figWidth=4.5, figHeight=3, title=None, xlab="mEos3 conc. (p.d.u.)", ylab="AmFRET", returnFig=False, xlims=None, ylims=None, logX=False, mpl_dpi=100, cmap=None):
     """
     Generates a density plot for all cells in a well.
     Based on Tayla's function.
@@ -77,11 +77,13 @@ def plotDAmFRETDensity(x, y, ax=None, vmin=0.25, figWidth=4.5, figHeight=3, titl
             cmap = plt.get_cmap("viridis")
             cmap.set_under(alpha=0)
     
-        ax.scatter_density(x, y, norm=norm, vmin=vmin, vmax=np.nanmax, cmap=cmap, dpi=mpl_dpi, clip_on=True) #BAD
+        if len(x) >= 2: #only one cell breaks things because vmin = vmax
+            ax.scatter_density(x, y, norm=norm, vmin=vmin, vmax=np.nanmax, cmap=cmap, dpi=mpl_dpi, clip_on=True) #BAD
         #ax.scatter_density(x, y, norm=norm, vmin=vmin, vmax=np.nanmax, cmap=cmap, dpi=100, zorder=5)
         #ax.scatter_density(x, y, norm=norm, vmin=vmin, vmax=np.nanmax, cmap=cmap, dpi=None, zorder=5)
-    
-        ax.spines.right.set_position(("outward", 0.5))
+
+        #not moving spines in this version because overlaps aren't present
+        # ax.spines.right.set_position(("outward", 0.5))
         ax.set_xlabel(xlab, loc="center")
         ax.set_ylabel(ylab, loc="center")
         if title:
@@ -106,13 +108,13 @@ def plotDAmFRETDensity(x, y, ax=None, vmin=0.25, figWidth=4.5, figHeight=3, titl
         #Even polars series seem to use the <Series>.name convention
         if type(y).__name__ == "Series":
             if y.name == "AmFRET":
-                ax.hlines(0, xlims[0], xlims[1], color=(0.6,0.6,0.6), linestyle="--")
+                ax.hlines(0, xlims[0], xlims[1], color=(0.6,0.6,0.6), linestyle="--", linewidth=0.5)
         
         if returnFig:
           return fig
         return ax
 
-def plotDAmFRETClusters(x, y, labels, ax=None, colors=plt.get_cmap("tab10").colors, vmin=0.25, figWidth=4.5, figHeight=3, title=None, xlab="mEos3 concentration (p.d.u.)", ylab="AmFRET", returnFig=False, xlims=None, ylims=None, logX=False, labelOrder=None, addPopulationStats=True):
+def plotDAmFRETClusters(x, y, labels, ax=None, colors=plt.get_cmap("tab10").colors, vmin=0.25, figWidth=4.5, figHeight=3, title=None, xlab="mEos3 conc. (p.d.u.)", ylab="AmFRET", returnFig=False, xlims=None, ylims=None, logX=False, labelOrder=None, addPopulationStats=True, mpl_dpi=100, summaryFontSize=8, textX=0.01, textYMax=0.98):
     """
     Generates a single figure with subplots of the whole well density and cluster densities.
     colors takes an iterable of colors (names or iterable of rgb)
@@ -129,36 +131,37 @@ def plotDAmFRETClusters(x, y, labels, ax=None, colors=plt.get_cmap("tab10").colo
         labelCountDict = dict(zip(uniqueLabels, labelCounts))
 
         #start positions - will be relative to size of axis, not data
-        textX = 0.01
-        textYMax = 0.98
+        #these are params now
+        # textX = 0.01
+        # textYMax = 0.98
 
         if labelOrder is None:
             #make the label for the highest pop
             label = uniqueLabels.max()
-            plotDAmFRETCluster(x[labels == label], y[labels == label], colors[label], ax, vmin=vmin, xlab=xlab, ylab=ylab)
+            plotDAmFRETCluster(x[labels == label], y[labels == label], colors[label], ax, vmin=vmin, xlab=xlab, ylab=ylab, mpl_dpi=mpl_dpi)
             if addPopulationStats:
-                higherText = ax.text(textX, textYMax, f"{labelCountDict[label]}, {labelCountDict[label] / sum(labelCountDict.values()):.2f}", va="top", ha="left", color=colors[label], transform = ax.transAxes)
+                higherText = ax.text(textX, textYMax, f"{labelCountDict[label]}, {labelCountDict[label] / sum(labelCountDict.values()):.2f}", va="top", ha="left", color=colors[label], transform = ax.transAxes, fontsize=summaryFontSize)
             
             #make label for non-highest pop(s)
             for label in uniqueLabels[-2::-1]:
-                plotDAmFRETCluster(x[labels == label], y[labels == label], colors[label], ax, vmin=vmin, xlab=xlab, ylab=ylab)
+                plotDAmFRETCluster(x[labels == label], y[labels == label], colors[label], ax, vmin=vmin, xlab=xlab, ylab=ylab, mpl_dpi=mpl_dpi)
 
                 if addPopulationStats:
-                    higherText = ax.annotate(f"{labelCountDict[label]}, {labelCountDict[label] / sum(labelCountDict.values()):.2f}", xycoords=higherText, xy=(0,-1), color=colors[label], horizontalalignment="left", transform = ax.transAxes)
+                    higherText = ax.annotate(f"{labelCountDict[label]}, {labelCountDict[label] / sum(labelCountDict.values()):.2f}", xycoords=higherText, xy=(0,-1), color=colors[label], horizontalalignment="left", transform = ax.transAxes, fontsize=summaryFontSize)
 
         else:
             label = labelOrder[0]
             
-            plotDAmFRETCluster(x[labels == label], y[labels == label], colors[label], ax, vmin=vmin, xlab=xlab, ylab=ylab)
+            plotDAmFRETCluster(x[labels == label], y[labels == label], colors[label], ax, vmin=vmin, xlab=xlab, ylab=ylab, mpl_dpi=mpl_dpi)
             if addPopulationStats:
-                higherText = ax.text(textX, textYMax, f"{labelCountDict[label]}, {labelCountDict[label] / sum(labelCountDict.values()):.2f}", va="top", ha="left", color=colors[label], transform = ax.transAxes)
+                higherText = ax.text(textX, textYMax, f"{labelCountDict[label]}, {labelCountDict[label] / sum(labelCountDict.values()):.2f}", va="top", ha="left", color=colors[label], transform = ax.transAxes, fontsize=summaryFontSize)
             
             #make label for non-highest pop(s)
             for label in labelOrder[1:]:
-                plotDAmFRETCluster(x[labels == label], y[labels == label], colors[label], ax, vmin=vmin, xlab=xlab, ylab=ylab)
+                plotDAmFRETCluster(x[labels == label], y[labels == label], colors[label], ax, vmin=vmin, xlab=xlab, ylab=ylab, mpl_dpi=mpl_dpi)
 
                 if addPopulationStats:
-                    higherText = ax.annotate(f"{labelCountDict[label]}, {labelCountDict[label] / sum(labelCountDict.values()):.2f}", xycoords=higherText, xy=(0,-1), color=colors[label], horizontalalignment="left", transform = ax.transAxes)
+                    higherText = ax.annotate(f"{labelCountDict[label]}, {labelCountDict[label] / sum(labelCountDict.values()):.2f}", xycoords=higherText, xy=(0,-1), color=colors[label], horizontalalignment="left", transform = ax.transAxes, fontsize=summaryFontSize)
         
         if xlims is None:
             xlims = (min(x), max(x))
@@ -185,7 +188,7 @@ def plotDAmFRETClusters(x, y, labels, ax=None, colors=plt.get_cmap("tab10").colo
         #Even polars series seem to use the <Series>.name convention
         if type(y).__name__ == "Series":
             if y.name == "AmFRET":
-                ax.hlines(0, xlims[0], xlims[1], color=(0.6,0.6,0.6), linestyle="--")
+                ax.hlines(0, xlims[0], xlims[1], color=(0.6,0.6,0.6), linestyle="--", linewidth=0.5)
 
         if title:
             ax.set_title(title)
@@ -195,7 +198,7 @@ def plotDAmFRETClusters(x, y, labels, ax=None, colors=plt.get_cmap("tab10").colo
             return fig
         return ax
 
-def plotDAmFRETDensityAndClusters(x, y, labels, colors=plt.get_cmap("tab10").colors, vmin=0.25, figWidth=9, figHeight=3, title=None, xlab="mEos3 concentration (p.d.u.)", ylab="AmFRET", xlims=None, ylims=None, logX=False, labelOrder=None):
+def plotDAmFRETDensityAndClusters(x, y, labels, colors=plt.get_cmap("tab10").colors, vmin=0.25, figWidth=9, figHeight=3, title=None, xlab="mEos3 conc. (p.d.u.)", ylab="AmFRET", xlims=None, ylims=None, logX=False, labelOrder=None, mpl_dpi=100):
     """
     Generates a single figure with subplots of the whole well density and cluster densities.
     colors takes an iterable of colors (names or iterable of rgb)
@@ -206,7 +209,7 @@ def plotDAmFRETDensityAndClusters(x, y, labels, colors=plt.get_cmap("tab10").col
 
         fig = plt.figure(figsize=(figWidth,figHeight), dpi=150)
         ax = fig.add_subplot(1, 2, 1, projection='scatter_density')
-        plotDAmFRETDensity(x, y, ax, vmin=vmin, xlab=xlab, ylab=ylab, xlims=xlims, ylims=ylims, logX=logX)
+        plotDAmFRETDensity(x, y, ax, vmin=vmin, xlab=xlab, ylab=ylab, xlims=xlims, ylims=ylims, logX=logX, mpl_dpi=mpl_dpi)
 
         if xlims is None:
             xlims = (min(x), max(x))
@@ -220,7 +223,7 @@ def plotDAmFRETDensityAndClusters(x, y, labels, colors=plt.get_cmap("tab10").col
         ax.set_ylim(ylims)
 
         ax = fig.add_subplot(1, 2, 2, projection='scatter_density')
-        plotDAmFRETClusters(x,y,labels, ax, colors, vmin=vmin, xlab=xlab, ylab=ylab, xlims=xlims, ylims=ylims, logX=logX, labelOrder=labelOrder)
+        plotDAmFRETClusters(x,y,labels, ax, colors, vmin=vmin, xlab=xlab, ylab=ylab, xlims=xlims, ylims=ylims, logX=logX, labelOrder=labelOrder, mpl_dpi=mpl_dpi)
 
         #if y contains a pd.Series and y axis is AmFRET, add the dashed line at 0
         #checks type because y could be a list or other non pd.Series type.
@@ -228,7 +231,7 @@ def plotDAmFRETDensityAndClusters(x, y, labels, colors=plt.get_cmap("tab10").col
         #Even polars series seem to use the <Series>.name convention
         if type(y).__name__ == "Series":
             if y.name == "AmFRET":
-                ax.hlines(0, xlims[0], xlims[1], color=(0.6,0.6,0.6), linestyle="--")
+                ax.hlines(0, xlims[0], xlims[1], color=(0.6,0.6,0.6), linestyle="--", linewidth=0.5)
 
         if title:
             fig.suptitle(title)
@@ -249,8 +252,11 @@ def plotBDFPAcceptorContours(dataToPlot, labelColumn="manualLabel", colors=plt.g
     #palette can take a dictionary, so this should work
     sns.kdeplot(dataToPlot, x="Acceptor/SSC", y="BDFP/SSC", hue=labelColumn, palette=colorsToUse, fill=True, alpha=0.5, legend=False, log_scale=True, ax=ax, clip=(xlims, ylims))
 
-    defaultXLabel = "mEos3 concentration (p.d.u.)"
-    defaultYLabel = "BDFP1.6:1.6 concentration (p.d.u.)"
+    # defaultXLabel = "mEos3 concentration (p.d.u.)"
+    # defaultYLabel = "BDFP1.6:1.6 concentration (p.d.u.)"
+    #new labels
+    defaultXLabel = "mEos3 conc. (p.d.u.)"
+    defaultYLabel = "BDFP conc. (p.d.u.)"
 
     ax.set_xlabel(defaultXLabel)
     ax.set_ylabel(defaultYLabel)
@@ -277,9 +283,12 @@ def plotBDFPAcceptorContours_test(dataToPlot, labelColumn="manualLabel", colors=
     # sns.kdeplot(dataToPlot, x="Acceptor/SSC", y="BDFP/SSC", hue=labelColumn, palette=colorsToUse, fill=True, alpha=0.5, legend=False, log_scale=True, ax=ax, clip=(xlims, ylims))
     sns.kdeplot(dataToPlot, x="Acceptor/SSC", y="BDFP/SSC", hue=dataToPlot[labelColumn].astype(str), palette=colorsToUse, fill=True, alpha=alpha, legend=False, log_scale=True, ax=ax, clip=(xlims, ylims), hue_order=stringHueOrder)
 
-    defaultXLabel = "mEos3 concentration (p.d.u.)"
-    defaultYLabel = "BDFP1.6:1.6 concentration (p.d.u.)"
-
+    # defaultXLabel = "mEos3 concentration (p.d.u.)"
+    # defaultYLabel = "BDFP1.6:1.6 concentration (p.d.u.)"
+    #new labels
+    defaultXLabel = "mEos3 conc. (p.d.u.)"
+    defaultYLabel = "BDFP conc. (p.d.u.)"
+    
     ax.set_xlabel(defaultXLabel)
     ax.set_ylabel(defaultYLabel)
 
@@ -308,8 +317,11 @@ def plotBDFPAcceptorContours_lines(dataToPlot, labelColumn="manualLabel", colors
     # sns.kdeplot(dataToPlot, x="Acceptor/SSC", y="BDFP/SSC", hue=labelColumn, palette=colorsToUse, fill=True, alpha=0.5, legend=False, log_scale=True, ax=ax, clip=(xlims, ylims))
     sns.kdeplot(dataToPlot, x="Acceptor/SSC", y="BDFP/SSC", hue=dataToPlot[labelColumn].astype(str), palette=colorsToUse, fill=False, linewidths=linewidths, legend=False, log_scale=True, ax=ax, clip=(xlims, ylims), hue_order=stringHueOrder)
 
-    defaultXLabel = "mEos3 concentration (p.d.u.)"
-    defaultYLabel = "BDFP1.6:1.6 concentration (p.d.u.)"
+    # defaultXLabel = "mEos3 concentration (p.d.u.)"
+    # defaultYLabel = "BDFP1.6:1.6 concentration (p.d.u.)"
+    #new labels
+    defaultXLabel = "mEos3 conc. (p.d.u.)"
+    defaultYLabel = "BDFP conc. (p.d.u.)"
 
     ax.set_xlabel(defaultXLabel)
     ax.set_ylabel(defaultYLabel)
@@ -486,25 +498,29 @@ def DAmFRETRow(titledFiles, axs, addTitles=True, rowTitle=None, rowTitleXShift=0
     if rowTitle is not None:
         axs[0].text(-0.25 + rowTitleXShift, 0.5, rowTitle, transform=axs[0].transAxes, ha="center", va="center", rotation_mode="anchor", rotation=90, fontsize=rowTitleSize)
 
-def DAmFRETRowFromData(titledDataList, axs, addTitles=True, rowTitle=None, rowTitleXShift=0, rowTitleSize=12, xlims=(10**0.25, 10**3), ylims=(-0.2,1), firstColLabelsOnly=False):
+def DAmFRETRowFromData(titledDataList, axs, addTitles=True, rowTitle=None, rowTitleXShift=0, rowTitleSize=12, xlims=(10**0.25, 10**3), ylims=(-0.2,1), firstColLabelsOnly=False, addXLabels=True, mpl_dpi=100):
     """
     titledDataList takes a list of tuples of (title, dataframe)
     """
     for i, (title, data) in enumerate(titledDataList):        
         if addTitles:
-            plotDAmFRETDensity(data["Acceptor/SSC"], data["AmFRET"], logX=True, ax=axs[i], title=title, xlims=xlims, ylims=ylims)
+            plotDAmFRETDensity(data["Acceptor/SSC"], data["AmFRET"], logX=True, ax=axs[i], title=title, xlims=xlims, ylims=ylims, mpl_dpi=mpl_dpi)
         else:
-            plotDAmFRETDensity(data["Acceptor/SSC"], data["AmFRET"], logX=True, ax=axs[i], xlims=xlims, ylims=ylims)
+            plotDAmFRETDensity(data["Acceptor/SSC"], data["AmFRET"], logX=True, ax=axs[i], xlims=xlims, ylims=ylims, mpl_dpi=mpl_dpi)
 
     if rowTitle is not None:
         axs[0].text(-0.25 + rowTitleXShift, 0.5, rowTitle, transform=axs[0].transAxes, ha="center", va="center", rotation_mode="anchor", rotation=90, fontsize=rowTitleSize)
 
+    
     if firstColLabelsOnly:
         for ax in axs[1:]:
-            ax.set_xlabel(None)
             ax.set_ylabel(None)
+    if not addXLabels:
+        for ax in axs:
+            ax.set_xlabel(None)
 
-def populationRow(titledFiles, axs, perTitleBoundaries, rowTitle=None, rowTitleXShift=0, rowTitleSize=12, colors=[[120/255, 120/255, 120/255], [249/255, 29/255, 0/255], [32/255, 25/255, 250/255]], addTitles=True, labelOrder=None, xlims=(10**0.25, 10**3), ylims=(-0.2,1)):
+
+def populationRow(titledFiles, axs, perTitleBoundaries, rowTitle=None, rowTitleXShift=0, rowTitleSize=12, colors=[[120/255, 120/255, 120/255], [249/255, 29/255, 0/255], [32/255, 25/255, 250/255]], addTitles=True, labelOrder=None, xlims=(10**0.25, 10**3), ylims=(-0.2,1), textX=0.01, textYMax=0.98):
     for i, (title, files) in enumerate(titledFiles):
         data, _ = dataToPlotFromFilelist_SSC(files, title)
         ax = axs[i]
@@ -522,17 +538,17 @@ def populationRow(titledFiles, axs, perTitleBoundaries, rowTitle=None, rowTitleX
             tempLabelOrder = [value for value in labelOrder if value in data["logTestLabel"].unique()]
         
         if addTitles:
-            plotDAmFRETClusters(data["Acceptor/SSC"], data["AmFRET"], data["logTestLabel"], logX=True, ylims=ylims, ax=ax, title=title, colors=colors, labelOrder=tempLabelOrder, xlims=xlims)
+            plotDAmFRETClusters(data["Acceptor/SSC"], data["AmFRET"], data["logTestLabel"], logX=True, ylims=ylims, ax=ax, title=title, colors=colors, labelOrder=tempLabelOrder, xlims=xlims, textX=textX, textYMax=textYMax)
             
         else:
-            plotDAmFRETClusters(data["Acceptor/SSC"], data["AmFRET"], data["logTestLabel"], logX=True, ylims=ylims, ax=ax, colors=colors, labelOrder=tempLabelOrder, xlims=xlims)
+            plotDAmFRETClusters(data["Acceptor/SSC"], data["AmFRET"], data["logTestLabel"], logX=True, ylims=ylims, ax=ax, colors=colors, labelOrder=tempLabelOrder, xlims=xlims, textX=textX, textYMax=textYMax)
         
         ax.set_xscale("log")
         
     if rowTitle is not None:
         axs[0].text(-0.25 + rowTitleXShift, 0.5, rowTitle, transform=axs[0].transAxes, ha="center", va="center", rotation_mode="anchor", rotation=90, fontsize=rowTitleSize)
 
-def populationRowFromData(titledDataList, axs, labelColumn, rowTitle=None, rowTitleXShift=0, rowTitleSize=12, colors=[[120/255, 120/255, 120/255], [249/255, 29/255, 0/255], [32/255, 25/255, 250/255]], addTitles=True, labelOrder=None, xlims=(10**0.25, 10**3), ylims=(-0.2,1), firstColLabelsOnly=False, expressionSlice=None):
+def populationRowFromData(titledDataList, axs, labelColumn, rowTitle=None, rowTitleXShift=0, rowTitleSize=12, colors=[[120/255, 120/255, 120/255], [249/255, 29/255, 0/255], [32/255, 25/255, 250/255]], addTitles=True, labelOrder=None, xlims=(10**0.25, 10**3), ylims=(-0.2,1), firstColLabelsOnly=False, addXLabels=True, expressionSlice=None, mpl_dpi=100, summaryFontSize=8, textX=0.01, textYMax=0.98):
     """
     titledDataList takes a list of tuples of (title, dataframe)
     labelOrder is required if expressionSlice is not none, but it really should just get set based on AmFRET values
@@ -548,30 +564,31 @@ def populationRowFromData(titledDataList, axs, labelColumn, rowTitle=None, rowTi
             addDefaultPopulationStats = False
             
         if addTitles:
-            plotDAmFRETClusters(data["Acceptor/SSC"], data["AmFRET"], data[labelColumn], logX=True, ylims=ylims, ax=axs[i], title=title, colors=colors, labelOrder=tempLabelOrder, xlims=xlims, addPopulationStats=addDefaultPopulationStats)
+            plotDAmFRETClusters(data["Acceptor/SSC"], data["AmFRET"], data[labelColumn], logX=True, ylims=ylims, ax=axs[i], title=title, colors=colors, labelOrder=tempLabelOrder, xlims=xlims, addPopulationStats=addDefaultPopulationStats, mpl_dpi=mpl_dpi, summaryFontSize=summaryFontSize, textX=textX, textYMax=textYMax)
             
         else:
-            plotDAmFRETClusters(data["Acceptor/SSC"], data["AmFRET"], data[labelColumn], logX=True, ylims=ylims, ax=axs[i], colors=colors, labelOrder=tempLabelOrder, xlims=xlims, addPopulationStats=addDefaultPopulationStats)
+            plotDAmFRETClusters(data["Acceptor/SSC"], data["AmFRET"], data[labelColumn], logX=True, ylims=ylims, ax=axs[i], colors=colors, labelOrder=tempLabelOrder, xlims=xlims, addPopulationStats=addDefaultPopulationStats, mpl_dpi=mpl_dpi, summaryFontSize=summaryFontSize, textX=textX, textYMax=textYMax)
 
         if expressionSlice is not None:
-            axs[i].vlines(expressionSlice, ylims[0], ylims[1], color=(0.6, 0.6, 0.6), linestyles="-.")
+            axs[i].vlines(expressionSlice, ylims[0], ylims[1], color=(0.6, 0.6, 0.6), linestyles="-.", linewidth=0.5)
             dataWithinSlice = data[(data["Acceptor/SSC"] >= expressionSlice[0]) & (data["Acceptor/SSC"] <= expressionSlice[1])]
             uniqueLabels, labelCounts = np.unique(dataWithinSlice[labelColumn], return_counts=True)
             labelCountDict = dict(zip(uniqueLabels, labelCounts))
     
             #start positions - will be relative to size of axis, not data
-            textX = 0.01
-            textYMax = 0.98
+            #these are params now
+            # textX = 0.01
+            # textYMax = 0.98
             label = tempLabelOrder[0]
             numWithLabel = labelCountDict.get(label, 0)
             # higherText = axs[i].text(textX, textYMax, f"{labelCountDict[label]}, {labelCountDict[label] / sum(labelCountDict.values()):.2f}", va="top", ha="left", color=colors[label], transform = axs[i].transAxes)
-            higherText = axs[i].text(textX, textYMax, f"{numWithLabel}, {numWithLabel / sum(labelCountDict.values()):.2f}", va="top", ha="left", color=colors[label], transform = axs[i].transAxes)
+            higherText = axs[i].text(textX, textYMax, f"{numWithLabel}, {numWithLabel / sum(labelCountDict.values()):.2f}", va="top", ha="left", color=colors[label], transform = axs[i].transAxes, fontsize=summaryFontSize)
             
             #make label for non-highest pop(s)
             for label in tempLabelOrder[1:]:
                 numWithLabel = labelCountDict.get(label, 0)
                 # higherText = axs[i].annotate(f"{labelCountDict[label]}, {labelCountDict[label] / sum(labelCountDict.values()):.2f}", xycoords=higherText, xy=(0,-1), color=colors[label], horizontalalignment="left", transform = axs[i].transAxes)
-                higherText = axs[i].annotate(f"{numWithLabel}, {numWithLabel / sum(labelCountDict.values()):.2f}", xycoords=higherText, xy=(0,-1), color=colors[label], horizontalalignment="left", transform = axs[i].transAxes)
+                higherText = axs[i].annotate(f"{numWithLabel}, {numWithLabel / sum(labelCountDict.values()):.2f}", xycoords=higherText, xy=(0,-1), color=colors[label], horizontalalignment="left", transform = axs[i].transAxes, fontsize=summaryFontSize)
                 
     
     if rowTitle is not None:
@@ -579,10 +596,12 @@ def populationRowFromData(titledDataList, axs, labelColumn, rowTitle=None, rowTi
 
     if firstColLabelsOnly:
         for ax in axs[1:]:
-            ax.set_xlabel(None)
             ax.set_ylabel(None)
+    if not addXLabels:
+        for ax in axs:
+            ax.set_xlabel(None)
 
-def populationRowWithDensityContour(titledFiles, axs, perTitleBoundaries, rowTitle=None, rowTitleXShift=0, rowTitleSize=12, colors=[[120/255, 120/255, 120/255], [249/255, 29/255, 0/255], [32/255, 25/255, 250/255]], addTitles=True, labelOrder=None, xlims=(10**0.25, 10**3), ylims=(-0.2,1)):
+def populationRowWithDensityContour(titledFiles, axs, perTitleBoundaries, rowTitle=None, rowTitleXShift=0, rowTitleSize=12, colors=[[120/255, 120/255, 120/255], [249/255, 29/255, 0/255], [32/255, 25/255, 250/255]], addTitles=True, labelOrder=None, xlims=(10**0.25, 10**3), ylims=(-0.2,1), mpl_dpi=100, textX=0.01, textYMax=0.98):
     for i, (title, files) in enumerate(titledFiles):
         data, _ = dataToPlotFromFilelist_SSC(files, title)
         ax = axs[i]
@@ -600,10 +619,10 @@ def populationRowWithDensityContour(titledFiles, axs, perTitleBoundaries, rowTit
             tempLabelOrder = [value for value in labelOrder if value in data["logTestLabel"].unique()]
         
         if addTitles:
-            plotDAmFRETClusters(data["Acceptor/SSC"], data["AmFRET"], data["logTestLabel"], logX=True, ylims=ylims, ax=ax, title=title, colors=colors, labelOrder=tempLabelOrder, xlims=xlims)
+            plotDAmFRETClusters(data["Acceptor/SSC"], data["AmFRET"], data["logTestLabel"], logX=True, ylims=ylims, ax=ax, title=title, colors=colors, labelOrder=tempLabelOrder, xlims=xlims, mpl_dpi=mpl_dpi, textX=textX, textYMax=textYMax)
             
         else:
-            plotDAmFRETClusters(data["Acceptor/SSC"], data["AmFRET"], data["logTestLabel"], logX=True, ylims=ylims, ax=ax, colors=colors, labelOrder=tempLabelOrder, xlims=xlims)
+            plotDAmFRETClusters(data["Acceptor/SSC"], data["AmFRET"], data["logTestLabel"], logX=True, ylims=ylims, ax=ax, colors=colors, labelOrder=tempLabelOrder, xlims=xlims, mpl_dpi=mpl_dpi, textX=textX, textYMax=textYMax)
         
         ax.set_xscale("log")
 
@@ -612,21 +631,25 @@ def populationRowWithDensityContour(titledFiles, axs, perTitleBoundaries, rowTit
     if rowTitle is not None:
         axs[0].text(-0.25 + rowTitleXShift, 0.5, rowTitle, transform=axs[0].transAxes, ha="center", va="center", rotation_mode="anchor", rotation=90, fontsize=rowTitleSize)
 
-def populationRowWithDensityContourFromData(titledDataList, axs, labelColumn, rowTitle=None, rowTitleXShift=0, rowTitleSize=12, colors=[[120/255, 120/255, 120/255], [249/255, 29/255, 0/255], [32/255, 25/255, 250/255]], addTitles=True, labelOrder=None, xlims=(10**0.25, 10**3), ylims=(-0.2,1), firstColLabelsOnly=False, expressionSlice=None):
+def populationRowWithDensityContourFromData(titledDataList, axs, labelColumn, rowTitle=None, rowTitleXShift=0, rowTitleSize=12, colors=[[120/255, 120/255, 120/255], [249/255, 29/255, 0/255], [32/255, 25/255, 250/255]], addTitles=True, labelOrder=None, xlims=(10**0.25, 10**3), ylims=(-0.2,1), firstColLabelsOnly=False, addXLabels=True, expressionSlice=None, mpl_dpi=100, summaryFontSize=8, textX=0.01, textYMax=0.98):
     """
     titledDataList takes a list of tuples of (title, dataframe)
     """
-# populationRowFromData(titledDataList, axs, labelColumn, rowTitle=None, rowTitleXShift=0, rowTitleSize=12, colors=[[120/255, 120/255, 120/255], [249/255, 29/255, 0/255], [32/255, 25/255, 250/255]], addTitles=True, labelOrder=None, xlims=(10**0.25, 10**3), ylims=(-0.2,1), firstColLabelsOnly=False, expressionSlice=None):
+# populationRowFromData(titledDataList, axs, labelColumn, rowTitle=None, rowTitleXShift=0, rowTitleSize=12, colors=[[120/255, 120/255, 120/255], [249/255, 29/255, 0/255], [32/255, 25/255, 250/255]], addTitles=True, labelOrder=None, xlims=(10**0.25, 10**3), ylims=(-0.2,1), firstColLabelsOnly=False, addXLabels=True, expressionSlice=None, mpl_dpi=100, summaryFontSize=8, textX=0.01, textYMax=0.98):
     
-    populationRowFromData(titledDataList, axs, labelColumn, rowTitle, rowTitleXShift, rowTitleSize, colors, addTitles, labelOrder, xlims, ylims, firstColLabelsOnly, expressionSlice)
+    populationRowFromData(titledDataList, axs, labelColumn, rowTitle, rowTitleXShift, rowTitleSize, colors, addTitles, labelOrder, xlims, ylims, firstColLabelsOnly,addXLabels, expressionSlice, mpl_dpi=mpl_dpi, summaryFontSize=summaryFontSize, textX=textX, textYMax=textYMax)
     for i, (title, data) in enumerate(titledDataList):
-        sns.kdeplot(data, x="Acceptor/SSC", y="AmFRET", log_scale=(True, False), clip=[(np.log10(xlims[0]),np.log10(xlims[1])), ylims], ax=axs[i], legend=False, alpha=0.5, linewidths=0.5, color="#000000")
+        #alpha changed to not obscure the data as much.
+        #sns.kdeplot(data, x="Acceptor/SSC", y="AmFRET", log_scale=(True, False), clip=[(np.log10(xlims[0]),np.log10(xlims[1])), ylims], ax=axs[i], legend=False, alpha=0.5, linewidths=0.5, color="#000000")
+        sns.kdeplot(data, x="Acceptor/SSC", y="AmFRET", log_scale=(True, False), clip=[(np.log10(xlims[0]),np.log10(xlims[1])), ylims], ax=axs[i], legend=False, alpha=0.25, linewidths=0.5, color="#000000")
 
     #kdeplot adds labels to everything, so remove those
     if firstColLabelsOnly:
         for ax in axs[1:]:
-            ax.set_xlabel(None)
             ax.set_ylabel(None)
+    if not addXLabels:
+        for ax in axs:
+            ax.set_xlabel(None)
         
     #     tempLabelOrder = None
     #     if labelOrder is not None:
@@ -644,7 +667,7 @@ def populationRowWithDensityContourFromData(titledDataList, axs, labelColumn, ro
 
 # def plotBDFPAcceptorContours_test(dataToPlot, labelColumn="manualLabel", colors=plt.get_cmap("tab10").colors, ax=None, xlims=None, ylims=None, returnFig=False, hueOrder=None, alpha=np.linspace(0.2,0.6,9)):
 
-def BDFPAcceptorRowFromData(titledDataList, axs, labelColumn="manualLabel", addTitles=True, rowTitle=None, rowTitleXShift=0, rowTitleSize=12, colors=[[120/255, 120/255, 120/255], [249/255, 29/255, 0/255], [32/255, 25/255, 250/255]], hueOrder=None, alpha=np.linspace(0.2,0.6,9), linewidths=np.linspace(0.1, 2, 9), xlims=None, ylims=None, firstColLabelsOnly=False, emptyFirstCol=False):
+def BDFPAcceptorRowFromData(titledDataList, axs, labelColumn="manualLabel", addTitles=True, rowTitle=None, rowTitleXShift=0, rowTitleSize=12, colors=[[120/255, 120/255, 120/255], [249/255, 29/255, 0/255], [32/255, 25/255, 250/255]], hueOrder=None, alpha=np.linspace(0.2,0.6,9), linewidths=np.linspace(0.1, 2, 9), xlims=None, ylims=None, firstColLabelsOnly=False, addXLabels=True, emptyFirstCol=False):
     """
     Makes a row of plots using plotBDFPAcceptorContours_test, most keywords are passed through.
     Use xlims and ylims carefully, they apply to all plots in the row regardless of BDFP+/bdfp-. 
@@ -659,8 +682,11 @@ def BDFPAcceptorRowFromData(titledDataList, axs, labelColumn="manualLabel", addT
     BDFPNegativeBDFPSSCLims_kde = (-4, 1)
 
     #alternate labels are not allowed right now.
-    defaultXLabel = "mEos3 concentration (p.d.u.)"
-    defaultYLabel = "BDFP1.6:1.6 concentration (p.d.u.)"
+    # defaultXLabel = "mEos3 concentration (p.d.u.)"
+    # defaultYLabel = "BDFP1.6:1.6 concentration (p.d.u.)"
+    #new labels
+    defaultXLabel = "mEos3 conc. (p.d.u.)"
+    defaultYLabel = "BDFP conc. (p.d.u.)"
     
     for i, (title, data) in enumerate(titledDataList):
         if emptyFirstCol and i == 0:
@@ -721,7 +747,10 @@ def BDFPAcceptorRowFromData(titledDataList, axs, labelColumn="manualLabel", addT
     if rowTitle is not None:
         axs[0].text(-0.25 + rowTitleXShift, 0.5, rowTitle, transform=axs[0].transAxes, ha="center", va="center", rotation_mode="anchor", rotation=90, fontsize=rowTitleSize)
 
+
     if firstColLabelsOnly:
         for ax in axs[1:]:
-            ax.set_xlabel(None)
             ax.set_ylabel(None)
+    if not addXLabels:
+        for ax in axs:
+            ax.set_xlabel(None)
